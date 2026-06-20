@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, handleFirestoreError, OperationType, collection, query, orderBy, onSnapshot, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType, collection, query, orderBy, onSnapshot, addDoc, getDocs, doc, updateDoc, deleteDoc, serverTimestamp } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { YouthEvent, YouthChallenge, YouthPost } from '../types';
 import { Calendar, MessageSquare, Plus, Send, Share2, ThumbsUp, Trophy, Zap, MapPin, Hash, Trash2 } from 'lucide-react';

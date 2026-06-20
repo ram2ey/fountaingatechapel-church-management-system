@@ -14,7 +14,7 @@ import {
   doc, 
   serverTimestamp, 
   orderBy 
-} from '../lib/firebase';
+} from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { UserProfile, SmallGroup, PrayerRequest, BRANCHES } from '../types';
 import { 

@@ -1,4 +1,4 @@
-import { db, handleFirestoreError, OperationType, collection, getDocs, addDoc } from './firebase';
+import { db, handleFirestoreError, OperationType, collection, getDocs, addDoc } from './supabase';
 
 export async function seedInitialData() {
   const collectionsToCheck = ['small_groups', 'sermons', 'reading_plans', 'devotionals'];

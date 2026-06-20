@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth, handleFirestoreError, OperationType, collection, query, orderBy, onSnapshot } from '../lib/firebase';
+import { db, auth, handleFirestoreError, OperationType, collection, query, orderBy, onSnapshot } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { Sermon } from '../types';
 import { Play, FileText, Music, Calendar, User, Search, BookOpen } from 'lucide-react';

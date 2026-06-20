@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, handleFirestoreError, OperationType, collection, query, where, getDocs, addDoc, updateDoc, doc, serverTimestamp, onSnapshot } from '../lib/firebase';
+import { db, handleFirestoreError, OperationType, collection, query, where, getDocs, addDoc, updateDoc, doc, serverTimestamp, onSnapshot } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { UserProfile, DiscipleshipRecord } from '../types';
 import { Award, BookOpen, CheckCircle, Compass, Heart, MessageSquare, Plus, Search, Shield, User, Users, Star, UserPlus } from 'lucide-react';

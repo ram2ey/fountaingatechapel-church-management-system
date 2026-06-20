@@ -1,6 +1,7 @@
+'use client';
+
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth, db, doc, getDoc, setDoc, serverTimestamp, deleteDoc, onSnapshot } from './firebase';
+import { auth, db, doc, getDoc, setDoc, serverTimestamp, deleteDoc, onSnapshot, onAuthStateChanged, triggerMockAuthChange } from './supabase';
 import { UserProfile } from '../types';
 
 interface AuthContextType {
@@ -56,6 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(dummyUser);
     setProfile(dummyProfile);
     setLoading(false);
+    triggerMockAuthChange(dummyUser);
   };
 
   const mockLogout = () => {
@@ -64,6 +66,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsMocked(false);
     setUser(null);
     setProfile(null);
+    triggerMockAuthChange(null);
   };
 
   useEffect(() => {

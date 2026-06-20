@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth, handleFirestoreError, OperationType, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, onSnapshot, deleteDoc, doc } from '../lib/firebase';
+import { db, auth, handleFirestoreError, OperationType, collection, query, where, getDocs, addDoc, serverTimestamp, orderBy, onSnapshot, deleteDoc, doc } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { UserProfile } from '../types';
 import { Calendar, CheckCircle2, ClipboardList, Key, Plus, Shield, Search, User, Users, Clock, Trash2, CheckSquare } from 'lucide-react';

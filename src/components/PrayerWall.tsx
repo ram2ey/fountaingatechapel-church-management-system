@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth, handleFirestoreError, OperationType, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove } from '../lib/firebase';
+import { db, auth, handleFirestoreError, OperationType, collection, query, orderBy, onSnapshot, addDoc, serverTimestamp, doc, updateDoc, arrayUnion, arrayRemove } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { PrayerRequest } from '../types';
 import { Heart, Send, MessageCircle, Quote } from 'lucide-react';

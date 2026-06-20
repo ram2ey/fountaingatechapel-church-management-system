@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth, handleFirestoreError, OperationType, collection, query, orderBy, onSnapshot } from '../lib/firebase';
+import { db, auth, handleFirestoreError, OperationType, collection, query, orderBy, onSnapshot } from '../lib/supabase';
 import { UserProfile } from '../types';
 import { Search, Mail, Phone, Calendar, Users } from 'lucide-react';
 import { format } from 'date-fns';

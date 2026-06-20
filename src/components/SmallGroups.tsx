@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { db, auth, handleFirestoreError, OperationType, collection, query, onSnapshot, updateDoc, doc, arrayUnion, arrayRemove } from '../lib/firebase';
+import { db, auth, handleFirestoreError, OperationType, collection, query, onSnapshot, updateDoc, doc, arrayUnion, arrayRemove } from '../lib/supabase';
 import { useAuth } from '../lib/AuthContext';
 import { SmallGroup } from '../types';
 import { Users, Clock, Tag, MessageCircle, ArrowRight, Send } from 'lucide-react';
