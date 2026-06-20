@@ -1,16 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../lib/AuthContext';
 import Sidebar from '../../components/Sidebar';
 import OnboardingFlow from '../../components/OnboardingFlow';
-import AuthPrompt from '../../components/AuthPrompt';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, profile, loading } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+
+  const isPublicPage = pathname === '/giving' || pathname === '/login';
+
+  useEffect(() => {
+    if (!loading && !user && !isPublicPage) {
+      router.replace('/login');
+    }
+  }, [user, loading, isPublicPage, router]);
 
   if (loading) {
     return (
@@ -25,11 +33,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return <OnboardingFlow />;
   }
 
-  // If user is not logged in, prompt for auth except for dashboard or giving
-  const isPublicPage = pathname === '/' || pathname === '/giving' || pathname === '/login';
   if (!user && !isPublicPage) {
-    const viewName = pathname.replace('/', '') || 'dashboard';
-    return <AuthPrompt view={viewName} />;
+    return null;
   }
 
   return (
