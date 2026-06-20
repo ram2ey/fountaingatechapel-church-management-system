@@ -1,0 +1,134 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Auth helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function hasRole(role) {
+      return isSignedIn() && 
+             exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    function isAdmin() {
+      return hasRole('admin');
+    }
+
+    function isLeader() {
+      return hasRole('leader') || hasRole('admin');
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId) || isAdmin();
+    }
+
+    // Prayer Requests
+    match /prayer_requests/{requestId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        // Allow adding to prayingUsers
+        (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['prayingUsers', 'encouragementCount']))
+        || (request.resource.data.authorId == request.auth.uid)
+        || isAdmin()
+      );
+      allow delete: if (resource.data.authorId == request.auth.uid) || isAdmin();
+    }
+
+    // Small Groups
+    match /small_groups/{groupId} {
+      allow read: if isSignedIn();
+      allow create: if isLeader();
+      allow update: if isLeader() || (
+        // Allow members to join/leave
+        isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members'])
+      );
+      allow delete: if isLeader();
+    }
+
+    // Sermons
+    match /sermons/{sermonId} {
+      allow read: if isSignedIn();
+      allow write: if isLeader();
+    }
+
+    // Announcements
+    match /announcements/{announcementId} {
+      allow read: if isSignedIn();
+      allow write: if isLeader();
+    }
+
+    // Reading Plans
+    match /reading_plans/{planId} {
+      allow read: if isSignedIn();
+      allow create: if isLeader();
+      allow update: if isLeader() || (
+        // Allow users to update their own progress
+        isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants'])
+      );
+    }
+
+    // Devotionals
+    match /devotionals/{devotionalId} {
+      allow read: if isSignedIn();
+      allow write: if isLeader();
+    }
+    
+    // Donations (Highly Restricted)
+    match /donations/{donationId} {
+      allow read: if isOwner(resource.data.userId) || isAdmin();
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+
+    // Attendance
+    match /attendance/{recordId} {
+      allow read: if isLeader() || (isSignedIn() && resource.data.userId == request.auth.uid);
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid; // checking in
+      allow update, delete: if isLeader();
+    }
+
+    // Discipleship Milestones & Courses
+    match /discipleship/{recordId} {
+      allow read: if isLeader() || (isSignedIn() && (resource.data.userId == request.auth.uid || resource.data.mentorId == request.auth.uid));
+      allow create, update, delete: if isLeader() || (isSignedIn() && request.resource.data.mentorId == request.auth.uid);
+    }
+
+    // Youth Group Hub
+    match /youth_events/{eventId} {
+      allow read: if isSignedIn();
+      allow write: if isLeader();
+    }
+
+    match /youth_challenges/{challengeId} {
+      allow read: if isSignedIn();
+      allow create: if isLeader();
+      allow update: if isLeader() || (
+        // Allow youth to sign up or log progress
+        isSignedIn() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['participants'])
+      );
+      allow delete: if isLeader();
+    }
+
+    match /youth_discussions/{postId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn() && request.resource.data.authorId == request.auth.uid;
+      allow update: if isSignedIn() && (resource.data.authorId == request.auth.uid || isLeader());
+      allow delete: if isSignedIn() && (resource.data.authorId == request.auth.uid || isLeader());
+    }
+  }
+}
