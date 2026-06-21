@@ -1,4 +1,4 @@
-# FaithConnect
+# Fountain Gate Chapel
 
 A comprehensive church management and community-building web application built for **Fountain Gate Chapel**.
 

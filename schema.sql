@@ -1,4 +1,4 @@
--- PostgreSQL Database Schema for FaithConnect (Supabase)
+-- PostgreSQL Database Schema for Fountain Gate Chapel (Supabase)
 
 -- Enable pgcrypto for gen_random_uuid()
 CREATE EXTENSION IF NOT EXISTS pgcrypto;

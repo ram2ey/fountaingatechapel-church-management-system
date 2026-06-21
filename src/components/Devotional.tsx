@@ -70,7 +70,7 @@ export default function Devotional() {
   };
 
   const handleShare = () => {
-    navigator.clipboard.writeText(`"${activeDevo.title}" Daily Devotional - FGC FaithConnect`);
+    navigator.clipboard.writeText(`"${activeDevo.title}" Daily Devotional - Fountain Gate Chapel`);
     setShowShareToast(true);
     setTimeout(() => setShowShareToast(false), 2500);
   };

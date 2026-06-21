@@ -3,7 +3,7 @@ import { AuthProvider } from '../lib/AuthContext';
 import '../index.css';
 
 export const metadata = {
-  title: 'FaithConnect - Fountain Gate Chapel',
+  title: 'Fountain Gate Chapel',
   description: 'Church Management System for Ankaful Branch',
 };
 

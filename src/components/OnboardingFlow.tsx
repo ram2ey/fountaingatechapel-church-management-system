@@ -55,7 +55,7 @@ export default function OnboardingFlow() {
           <div className="mx-auto w-16 h-16 bg-church-burgundy/10 text-church-burgundy rounded-2xl flex items-center justify-center mb-6 shadow-inner animate-bounce">
             <Users size={32} />
           </div>
-          <h2 className="text-3xl font-serif font-bold text-church-burgundy">Welcome to FaithConnect</h2>
+          <h2 className="text-3xl font-serif font-bold text-church-burgundy">Welcome to Fountain Gate Chapel</h2>
           <p className="text-slate-500 text-sm mt-2 leading-relaxed">
             Let's complete your profile to connect you with your home branch and fellowship.
           </p>
