@@ -458,6 +458,42 @@ export const orderBy = (fieldPath: string, directionStr?: 'asc' | 'desc') => {
   return { type: 'orderBy', field: fieldPath, direction: directionStr || 'asc' };
 };
 
+const mapDbToFrontend = (item: any, table: string): any => {
+  if (item === null || item === undefined) return item;
+  
+  const mapped = { ...item };
+  
+  if (table === 'users') {
+    if (mapped.display_name !== undefined) {
+      mapped.displayName = mapped.display_name;
+    }
+    if (mapped.created_at !== undefined) {
+      mapped.createdAt = mapped.created_at;
+    }
+  }
+  
+  return reviveTimestamps(mapped);
+};
+
+const mapFrontendToDb = (data: any, table: string): any => {
+  if (data === null || data === undefined) return data;
+  
+  const mapped = { ...data };
+  
+  if (table === 'users') {
+    if (mapped.displayName !== undefined) {
+      mapped.display_name = mapped.displayName;
+      delete mapped.displayName;
+    }
+    if (mapped.createdAt !== undefined) {
+      mapped.created_at = mapped.createdAt;
+      delete mapped.createdAt;
+    }
+  }
+  
+  return mapped;
+};
+
 export const getDoc = async (docRef: any) => {
   const parts = docRef.path.split('/');
   const table = parts[0];
@@ -479,7 +515,7 @@ export const getDoc = async (docRef: any) => {
   return {
     exists: () => !!data,
     id,
-    data: () => data
+    data: () => mapDbToFrontend(data, table)
   };
 };
 
@@ -540,11 +576,16 @@ export const getDocs = async (queryRef: any) => {
   let builder = supabase.from(table).select('*');
   if (queryRef.type === 'query' && queryRef.constraints) {
     queryRef.constraints.forEach((c: any) => {
+      let field = c.field;
+      if (table === 'users') {
+        if (field === 'displayName') field = 'display_name';
+        if (field === 'createdAt') field = 'created_at';
+      }
       if (c.type === 'where') {
         const op = c.op === '==' ? 'eq' : c.op === '!=' ? 'neq' : c.op === 'array-contains' ? 'cs' : 'eq';
-        builder = (builder as any)[op](c.field, c.value);
+        builder = (builder as any)[op](field, c.value);
       } else if (c.type === 'orderBy') {
-        builder = builder.order(c.field, { ascending: c.direction === 'asc' });
+        builder = builder.order(field, { ascending: c.direction === 'asc' });
       }
     });
   }
@@ -555,11 +596,11 @@ export const getDocs = async (queryRef: any) => {
   return {
     docs: (data || []).map((item: any) => ({
       id: item.id,
-      data: () => item
+      data: () => mapDbToFrontend(item, table)
     })),
     empty: !data || data.length === 0,
     size: data?.length || 0,
-    forEach: (cb: any) => data?.forEach((item: any, idx: number) => cb({ id: item.id, data: () => item }, idx))
+    forEach: (cb: any) => (data || []).map((item: any) => mapDbToFrontend(item, table)).forEach((item: any, idx: number) => cb({ id: item.id, data: () => item }, idx))
   };
 };
 
@@ -657,7 +698,8 @@ export const setDoc = async (docRef: any, data: any) => {
   }
 
   const resolved = resolveWriteData(data);
-  const { error } = await supabase.from(table).upsert({ id, ...resolved });
+  const mapped = mapFrontendToDb(resolved, table);
+  const { error } = await supabase.from(table).upsert({ id, ...mapped });
   if (error) throw error;
 };
 
@@ -674,7 +716,8 @@ export const addDoc = async (colRef: any, data: any) => {
   }
 
   const resolved = resolveWriteData(data);
-  const { data: inserted, error } = await supabase.from(table).insert(resolved).select('id').single();
+  const mapped = mapFrontendToDb(resolved, table);
+  const { data: inserted, error } = await supabase.from(table).insert(mapped).select('id').single();
   if (error) throw error;
   return { id: inserted.id };
 };
@@ -726,7 +769,8 @@ export const updateDoc = async (docRef: any, data: any) => {
     }
   }
 
-  const { error } = await supabase.from(table).update(resolved).eq('id', id);
+  const mapped = mapFrontendToDb(resolved, table);
+  const { error } = await supabase.from(table).update(mapped).eq('id', id);
   if (error) throw error;
 };
 
