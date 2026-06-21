@@ -647,7 +647,8 @@ export const onSnapshot = (ref: any, onNext: any, onError?: any) => {
     getDocs(ref).then(onNext).catch(onError);
   }
 
-  const channel = supabase.channel(`realtime:${table}`)
+  const uniqueId = Math.random().toString(36).substring(2, 10);
+  const channel = supabase.channel(`realtime:${table}:${uniqueId}`)
     .on('postgres_changes', { event: '*', schema: 'public', table: table }, async () => {
       try {
         if (docId) {
