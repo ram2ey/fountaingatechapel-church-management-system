@@ -227,11 +227,7 @@ export default function AuthPrompt({ view }: { view: string }) {
         <div className="absolute top-0 right-0 w-32 h-32 bg-church-gold/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
         
         <div className="flex justify-center mb-5">
-          <FountainGateLogo size="md" />
-        </div>
-        
-        <div className="mx-auto w-12 h-12 bg-church-burgundy/10 text-church-burgundy rounded-2xl flex items-center justify-center mb-4 shadow-inner">
-          <IconComponent size={24} />
+          <FountainGateLogo size="lg" showText={false} />
         </div>
 
         <h3 className="text-xl md:text-2xl font-serif font-bold text-church-burgundy mb-1">{current.title}</h3>
