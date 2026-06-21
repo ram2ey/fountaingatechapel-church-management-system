@@ -35,7 +35,6 @@ export default function AuthPrompt({ view }: { view: string }) {
   
   const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
   const [showPassword, setShowPassword] = useState(false);
-  const [showDevRoles, setShowDevRoles] = useState(false);
 
   // Sign In Fields
   const [usernameOrEmail, setUsernameOrEmail] = useState('');
@@ -561,74 +560,7 @@ export default function AuthPrompt({ view }: { view: string }) {
           </form>
         )}
 
-        {/* Divider */}
-        <div className="my-5 flex items-center justify-center space-x-2">
-          <div className="h-px bg-slate-100 flex-1"></div>
-          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Dev Panel</span>
-          <div className="h-px bg-slate-100 flex-1"></div>
-        </div>
 
-        {/* Expandable Mock Login Panel */}
-        <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/50">
-          <button
-            type="button"
-            onClick={() => setShowDevRoles(!showDevRoles)}
-            className="w-full flex items-center justify-between p-3 hover:bg-slate-100/50 transition-colors text-slate-600 font-bold text-xs"
-          >
-            <div className="flex items-center space-x-2 text-slate-500">
-              <Settings className="w-3 h-3 animate-spin-slow" />
-              <span>Quick Role Logins (Mock Mode)</span>
-            </div>
-            <ChevronDown
-              className={`w-3 h-3 text-slate-400 transition-transform duration-300 ${
-                showDevRoles ? 'rotate-180' : ''
-              }`}
-            />
-          </button>
-
-          <AnimatePresence>
-            {showDevRoles && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: 'auto', opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className="overflow-hidden"
-              >
-                <div className="p-3 bg-white border-t border-slate-100 grid grid-cols-2 gap-2 text-[10px]">
-                  <button
-                    type="button"
-                    onClick={() => mockLogin('member')}
-                    className="py-1.5 px-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg font-semibold border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
-                  >
-                    John Member
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => mockLogin('leader')}
-                    className="py-1.5 px-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg font-semibold border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
-                  >
-                    Sarah Leader
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => mockLogin('admin')}
-                    className="py-1.5 px-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg font-semibold border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
-                  >
-                    Pastor Michael (Admin)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => mockLogin('new_user')}
-                    className="py-1.5 px-2 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg font-semibold border border-amber-200 hover:border-amber-300 transition-colors cursor-pointer"
-                  >
-                    New User (Onboarding)
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
 
         {/* Scripture quote banner */}
         <div className="bg-church-cream/40 border-l-4 border-church-gold p-3 mt-5 text-left rounded-r-2xl">
