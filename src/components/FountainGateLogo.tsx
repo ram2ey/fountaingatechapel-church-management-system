@@ -18,6 +18,22 @@ export default function FountainGateLogo({ size = 'md', showText = true }: Fount
 
   return (
     <div className="flex items-center space-x-3 select-none">
+      {showText && (
+        <div className="flex flex-col text-left">
+          {/* Brand Font matches the modern geometric clean lines of the logo */}
+          <span className={`font-serif font-black tracking-tight text-[#1664a7] leading-none uppercase ${selected.text}`}>
+            Fountain
+          </span>
+          <span className={`font-serif font-black tracking-tight text-[#1664a7] leading-none uppercase mt-1 ${selected.text}`}>
+            Gate Chapel
+          </span>
+          {/* Golden subtitle as requesting by user */}
+          <span className={`font-sans font-medium text-[#D1A129] italic tracking-wide mt-1.5 leading-none ${selected.slogan}`}>
+            Change Pastures, Ankaful.
+          </span>
+        </div>
+      )}
+
       {/* Dynamic Stylized Reeds Vector matching the uploaded logo */}
       <div className={`relative flex-shrink-0 ${selected.svg}`}>
         <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full transform hover:scale-105 transition-transform duration-300">
@@ -68,22 +84,6 @@ export default function FountainGateLogo({ size = 'md', showText = true }: Fount
           />
         </svg>
       </div>
-
-      {showText && (
-        <div className="flex flex-col">
-          {/* Brand Font matches the modern geometric clean lines of the logo */}
-          <span className={`font-serif font-black tracking-tight text-[#1664a7] leading-none uppercase ${selected.text}`}>
-            Fountain
-          </span>
-          <span className={`font-serif font-light tracking-wide text-[#1664a7] leading-none uppercase mt-0.5 ${selected.text}`}>
-            Gate Chapel
-          </span>
-          {/* Golden subtitle as requesting by user */}
-          <span className={`font-sans font-medium text-[#D1A129] italic tracking-wide mt-1 leading-none ${selected.slogan}`}>
-            Change Pastures, Ankaful.
-          </span>
-        </div>
-      )}
     </div>
   );
 }
