@@ -470,6 +470,32 @@ const mapDbToFrontend = (item: any, table: string): any => {
     if (mapped.created_at !== undefined) {
       mapped.createdAt = mapped.created_at;
     }
+  } else if (table === 'prayer_requests') {
+    if (mapped.user_name !== undefined) {
+      mapped.authorName = mapped.user_name;
+    }
+    if (mapped.likes !== undefined) {
+      mapped.prayingUsers = mapped.likes;
+    } else {
+      mapped.prayingUsers = [];
+    }
+  } else if (table === 'small_groups') {
+    if (mapped.time !== undefined) {
+      mapped.meetingTime = mapped.time;
+    }
+    if (mapped.leader_name !== undefined) {
+      mapped.leaderName = mapped.leader_name;
+    }
+  } else if (table === 'announcements') {
+    if (mapped.author_name !== undefined) {
+      mapped.authorName = mapped.author_name;
+    }
+  } else if (table === 'discipleship') {
+    if (mapped.enrolledCourses !== undefined) {
+      mapped.completedCourses = mapped.enrolledCourses;
+    } else {
+      mapped.completedCourses = [];
+    }
   }
   
   return reviveTimestamps(mapped);
@@ -489,6 +515,41 @@ const mapFrontendToDb = (data: any, table: string): any => {
       mapped.created_at = mapped.createdAt;
       delete mapped.createdAt;
     }
+  } else if (table === 'prayer_requests') {
+    if (mapped.authorName !== undefined) {
+      mapped.user_name = mapped.authorName;
+      delete mapped.authorName;
+    }
+    if (mapped.prayingUsers !== undefined) {
+      mapped.likes = mapped.prayingUsers;
+      delete mapped.prayingUsers;
+    }
+    // Delete columns not present in the postgres schema
+    delete mapped.authorId;
+    delete mapped.encouragementCount;
+  } else if (table === 'small_groups') {
+    if (mapped.meetingTime !== undefined) {
+      mapped.time = mapped.meetingTime;
+      delete mapped.meetingTime;
+    }
+    if (mapped.leaderName !== undefined) {
+      mapped.leader_name = mapped.leaderName;
+      delete mapped.leaderName;
+    }
+    // Delete columns not present in the postgres schema
+    delete mapped.leaderId;
+  } else if (table === 'announcements') {
+    if (mapped.authorName !== undefined) {
+      mapped.author_name = mapped.authorName;
+      delete mapped.authorName;
+    }
+  } else if (table === 'discipleship') {
+    if (mapped.completedCourses !== undefined) {
+      mapped.enrolledCourses = mapped.completedCourses;
+      delete mapped.completedCourses;
+    }
+    // Delete columns not present in the postgres schema
+    delete mapped.lastUpdated;
   }
   
   return mapped;
@@ -580,6 +641,16 @@ export const getDocs = async (queryRef: any) => {
       if (table === 'users') {
         if (field === 'displayName') field = 'display_name';
         if (field === 'createdAt') field = 'created_at';
+      } else if (table === 'prayer_requests') {
+        if (field === 'authorName') field = 'user_name';
+        if (field === 'prayingUsers') field = 'likes';
+      } else if (table === 'small_groups') {
+        if (field === 'meetingTime') field = 'time';
+        if (field === 'leaderName') field = 'leader_name';
+      } else if (table === 'announcements') {
+        if (field === 'authorName') field = 'author_name';
+      } else if (table === 'discipleship') {
+        if (field === 'completedCourses') field = 'enrolledCourses';
       }
       if (c.type === 'where') {
         const op = c.op === '==' ? 'eq' : c.op === '!=' ? 'neq' : c.op === 'array-contains' ? 'cs' : 'eq';
@@ -756,13 +827,14 @@ export const updateDoc = async (docRef: any, data: any) => {
 
   const resolved = { ...data };
   if (current) {
+    const mappedCurrent = mapDbToFrontend(current, table);
     for (const key in resolved) {
       const val = resolved[key];
       if (val && val._type === 'arrayUnion') {
-        const currentArr = Array.isArray(current[key]) ? current[key] : [];
+        const currentArr = Array.isArray(mappedCurrent[key]) ? mappedCurrent[key] : [];
         resolved[key] = [...new Set([...currentArr, ...val.elements])];
       } else if (val && val._type === 'arrayRemove') {
-        const currentArr = Array.isArray(current[key]) ? current[key] : [];
+        const currentArr = Array.isArray(mappedCurrent[key]) ? mappedCurrent[key] : [];
         resolved[key] = currentArr.filter((el: any) => !val.elements.includes(el));
       } else if (val && val._type === 'serverTimestamp') {
         resolved[key] = new Date().toISOString();
