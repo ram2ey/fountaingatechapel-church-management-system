@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
 // Load Supabase credentials from environment
-const supabaseUrl = import.meta.env?.NEXT_PUBLIC_SUPABASE_URL || (typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_SUPABASE_URL : '') || '';
-const supabaseAnonKey = import.meta.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY || (typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY : '') || '';
+const supabaseUrl = (import.meta as any).env?.NEXT_PUBLIC_SUPABASE_URL || (typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_SUPABASE_URL : '') || '';
+const supabaseAnonKey = (import.meta as any).env?.NEXT_PUBLIC_SUPABASE_ANON_KEY || (typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_SUPABASE_ANON_KEY : '') || '';
 
 export const isMockActive = () => {
   if (typeof window === 'undefined') return false;
@@ -27,18 +27,39 @@ export const triggerMockAuthChange = (user: any) => {
   mockAuthListeners.forEach(l => l.callback(user));
 };
 
+const getMockCredentials = (): any[] => {
+  if (typeof window === 'undefined') return [];
+  const data = localStorage.getItem('fc_mock_credentials');
+  return data ? JSON.parse(data) : [];
+};
+
+const saveMockCredentials = (creds: any[]) => {
+  if (typeof window === 'undefined') return;
+  localStorage.setItem('fc_mock_credentials', JSON.stringify(creds));
+};
+
 export const auth = {
   get currentUser() {
     if (isMockActive()) {
-      const isMock = localStorage.getItem('faithconnect_mock_active') === 'true';
-      if (isMock) {
-        const role = localStorage.getItem('faithconnect_mock_role') || 'member';
-        return {
-          uid: `demo-${role}-123`,
-          email: `demo-${role}@faithconnect.org`,
-          displayName: role === 'admin' ? 'Pastor Michael' : role === 'leader' ? 'Sarah Leader' : 'John Member',
-          photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100'
-        };
+      if (typeof window !== 'undefined') {
+        const mockUserStr = localStorage.getItem('faithconnect_mock_user');
+        if (mockUserStr) {
+          try {
+            return JSON.parse(mockUserStr);
+          } catch (e) {
+            // ignore
+          }
+        }
+        const isMock = localStorage.getItem('faithconnect_mock_active') === 'true';
+        if (isMock) {
+          const role = localStorage.getItem('faithconnect_mock_role') || 'member';
+          return {
+            uid: `demo-${role}-123`,
+            email: `demo-${role}@faithconnect.org`,
+            displayName: role === 'admin' ? 'Pastor Michael' : role === 'leader' ? 'Sarah Leader' : 'John Member',
+            photoURL: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=100'
+          };
+        }
       }
       return null;
     }
@@ -100,19 +121,186 @@ export const onAuthStateChanged = (authObj: any, callback: (user: any) => void) 
   };
 };
 
-export const signInWithPopup = async (authObj: any, provider: any) => {
-  if (isMockActive()) return;
-  return supabase.auth.signInWithOAuth({
-    provider: 'google',
+export const signUpWithCredentials = async (
+  username: string,
+  email: string,
+  password: string,
+  displayName: string,
+  branch: string,
+  occupation: string,
+  phone: string,
+  address: string,
+  dob: string
+) => {
+  const normalizedUsername = username.trim().toLowerCase();
+  const normalizedEmail = email.trim().toLowerCase();
+
+  if (isMockActive()) {
+    const creds = getMockCredentials();
+    if (creds.some(c => c.username === normalizedUsername)) {
+      throw new Error('Username is already taken.');
+    }
+    if (creds.some(c => c.email === normalizedEmail)) {
+      throw new Error('Email is already registered.');
+    }
+
+    const newUid = 'mock-user-' + Math.random().toString(36).substring(2, 11);
+    
+    creds.push({
+      uid: newUid,
+      username: normalizedUsername,
+      email: normalizedEmail,
+      password: password,
+      displayName,
+      role: 'member',
+      branch,
+      occupation,
+      phone,
+      address,
+      dob
+    });
+    saveMockCredentials(creds);
+
+    const mockUser = {
+      uid: newUid,
+      email: normalizedEmail,
+      displayName: displayName,
+      photoURL: ''
+    };
+
+    const users = getLocalCollection('users');
+    const newUserProfile = {
+      id: newUid,
+      uid: newUid,
+      email: normalizedEmail,
+      username: normalizedUsername,
+      displayName: displayName,
+      role: 'member',
+      branch,
+      occupation,
+      phone,
+      address,
+      dob,
+      onboarded: true,
+      createdAt: new Date().toISOString()
+    };
+    users.push(newUserProfile);
+    saveLocalCollection('users', users);
+
+    localStorage.setItem('faithconnect_mock_active', 'true');
+    localStorage.setItem('faithconnect_mock_user', JSON.stringify(mockUser));
+    triggerMockAuthChange(mockUser);
+
+    return { user: mockUser };
+  }
+
+  // Production Mode (Supabase)
+  const { data: existingUser, error: checkErr } = await supabase
+    .from('users')
+    .select('username')
+    .eq('username', normalizedUsername)
+    .maybeSingle();
+
+  if (checkErr) throw checkErr;
+  if (existingUser) {
+    throw new Error('Username is already taken.');
+  }
+
+  const { data: authData, error: signUpErr } = await supabase.auth.signUp({
+    email: normalizedEmail,
+    password: password,
+    options: {
+      data: {
+        full_name: displayName,
+        username: normalizedUsername,
+        branch: branch
+      }
+    }
   });
+
+  if (signUpErr) throw signUpErr;
+  if (!authData.user) throw new Error('Failed to create account.');
+
+  const { error: profileErr } = await supabase.from('users').insert({
+    id: authData.user.id,
+    email: normalizedEmail,
+    username: normalizedUsername,
+    display_name: displayName,
+    branch: branch,
+    role: 'member',
+    occupation: occupation.trim(),
+    phone: phone.trim(),
+    address: address.trim(),
+    dob: dob.trim(),
+    onboarded: true
+  });
+
+  if (profileErr) throw profileErr;
+
+  return authData;
+};
+
+export const signInWithCredentials = async (usernameOrEmail: string, password: string) => {
+  const input = usernameOrEmail.trim().toLowerCase();
+
+  if (isMockActive()) {
+    const creds = getMockCredentials();
+    const found = creds.find(c => c.username === input || c.email === input);
+    if (!found || found.password !== password) {
+      throw new Error('Invalid username/email or password.');
+    }
+
+    const mockUser = {
+      uid: found.uid,
+      email: found.email,
+      displayName: found.displayName,
+      photoURL: ''
+    };
+
+    localStorage.setItem('faithconnect_mock_active', 'true');
+    localStorage.setItem('faithconnect_mock_user', JSON.stringify(mockUser));
+    triggerMockAuthChange(mockUser);
+
+    return { user: mockUser };
+  }
+
+  // Production Mode (Supabase)
+  let targetEmail = input;
+  if (!input.includes('@')) {
+    const { data: profile, error: lookupErr } = await supabase
+      .from('users')
+      .select('email')
+      .eq('username', input)
+      .maybeSingle();
+    
+    if (lookupErr) throw lookupErr;
+    if (!profile) {
+      throw new Error('No account found with this username.');
+    }
+    targetEmail = profile.email;
+  }
+
+  const { data: authData, error: signInErr } = await supabase.auth.signInWithPassword({
+    email: targetEmail,
+    password: password
+  });
+
+  if (signInErr) throw signInErr;
+  return authData;
 };
 
 export const signOut = async (authObj: any) => {
-  if (isMockActive()) return;
+  if (isMockActive()) {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('faithconnect_mock_active');
+      localStorage.removeItem('faithconnect_mock_role');
+      localStorage.removeItem('faithconnect_mock_user');
+    }
+    triggerMockAuthChange(null);
+    return;
+  }
   return supabase.auth.signOut();
 };
-
-export const GoogleAuthProvider = class {};
 
 // Mock local storage simulation logic
 const getLocalCollection = (colName: string): any[] => {
@@ -244,11 +432,14 @@ export const collection = (firestore: any, path: string) => {
   return { type: 'collection', path };
 };
 
-export const doc = (parent: any, path?: string) => {
+export const doc = (parent: any, pathOrCollection?: string, docId?: string) => {
   if (parent.type === 'collection') {
-    return { type: 'doc', path: parent.path + '/' + path };
+    return { type: 'doc', path: parent.path + '/' + pathOrCollection };
   }
-  return { type: 'doc', path };
+  if (docId) {
+    return { type: 'doc', path: pathOrCollection + '/' + docId };
+  }
+  return { type: 'doc', path: pathOrCollection };
 };
 
 export const query = (queryRef: any, ...queryConstraints: any[]) => {

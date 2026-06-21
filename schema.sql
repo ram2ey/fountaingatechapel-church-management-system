@@ -7,9 +7,12 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY, -- Maps to auth.users.id
     email TEXT NOT NULL,
+    username TEXT UNIQUE,
     display_name TEXT,
     phone TEXT,
     occupation TEXT,
+    address TEXT,
+    dob TEXT,
     bio TEXT,
     role TEXT DEFAULT 'member', -- 'member', 'leader', 'admin'
     branch TEXT DEFAULT 'Ankaful',

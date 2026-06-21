@@ -29,18 +29,8 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ isMenuOpen, setIsMenuOpen }: SidebarProps) {
-  const { user, profile, mockLogout } = useAuth();
+  const { user, profile, logout } = useAuth();
   const pathname = usePathname();
-
-  const logout = () => {
-    if (user?.uid?.startsWith('demo-')) {
-      mockLogout();
-    } else {
-      // Real Supabase sign out
-      const { signOut } = require('../lib/supabase');
-      signOut();
-    }
-  };
 
   const NavItem = ({ href, icon: Icon, label }: { href: string, icon: any, label: string }) => {
     const isActive = pathname === href;

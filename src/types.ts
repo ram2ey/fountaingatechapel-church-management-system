@@ -12,6 +12,8 @@ export interface UserProfile {
   bio?: string;
   phone?: string;
   occupation?: string;
+  address?: string;
+  dob?: string;
   onboarded?: boolean;
 }
 

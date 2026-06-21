@@ -1,7 +1,21 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth, db, doc, getDoc, setDoc, serverTimestamp, deleteDoc, onSnapshot, onAuthStateChanged, triggerMockAuthChange } from './supabase';
+import { 
+  auth, 
+  db, 
+  doc, 
+  getDoc, 
+  setDoc, 
+  serverTimestamp, 
+  deleteDoc, 
+  onSnapshot, 
+  onAuthStateChanged, 
+  triggerMockAuthChange,
+  signUpWithCredentials as apiSignUpWithCredentials,
+  signInWithCredentials as apiSignInWithCredentials,
+  signOut as apiSignOut
+} from './supabase';
 import { UserProfile } from '../types';
 
 interface AuthContextType {
@@ -11,6 +25,19 @@ interface AuthContextType {
   isAdmin: boolean;
   mockLogin: (role: 'member' | 'leader' | 'admin' | 'new_user') => void;
   mockLogout: () => void;
+  signUpWithCredentials: (
+    username: string,
+    email: string,
+    password: string,
+    displayName: string,
+    branch: string,
+    occupation: string,
+    phone: string,
+    address: string,
+    dob: string
+  ) => Promise<any>;
+  signInWithCredentials: (usernameOrEmail: string, password: string) => Promise<any>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -19,7 +46,10 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   isAdmin: false,
   mockLogin: () => {},
-  mockLogout: () => {}
+  mockLogout: () => {},
+  signUpWithCredentials: async () => {},
+  signInWithCredentials: async () => {},
+  logout: async () => {}
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -63,15 +93,153 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const mockLogout = () => {
     localStorage.removeItem('faithconnect_mock_active');
     localStorage.removeItem('faithconnect_mock_role');
+    localStorage.removeItem('faithconnect_mock_user');
     setIsMocked(false);
     setUser(null);
     setProfile(null);
     triggerMockAuthChange(null);
   };
 
+  const signUpWithCredentials = async (
+    username: string,
+    email: string,
+    password: string,
+    displayName: string,
+    branch: string,
+    occupation: string,
+    phone: string,
+    address: string,
+    dob: string
+  ) => {
+    setLoading(true);
+    try {
+      const res = await apiSignUpWithCredentials(
+        username,
+        email,
+        password,
+        displayName,
+        branch,
+        occupation,
+        phone,
+        address,
+        dob
+      );
+      // Setup state for mock immediately since it doesn't trigger a real auth listener callback
+      const isMock = localStorage.getItem('faithconnect_mock_active') === 'true';
+      if (isMock) {
+        setIsMocked(true);
+        setUser(res.user);
+        const mockProfile: UserProfile = {
+          uid: res.user.uid,
+          email: res.user.email,
+          displayName: res.user.displayName,
+          role: 'member',
+          branch,
+          occupation,
+          phone,
+          address,
+          dob,
+          createdAt: { toDate: function() { return new Date(); } },
+          onboarded: true
+        };
+        setProfile(mockProfile);
+        setLoading(false);
+      }
+      return res;
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
+  };
+
+  const signInWithCredentials = async (usernameOrEmail: string, password: string) => {
+    setLoading(true);
+    try {
+      const res = await apiSignInWithCredentials(usernameOrEmail, password);
+      // Setup state for mock immediately since it doesn't trigger a real auth listener callback
+      const isMock = localStorage.getItem('faithconnect_mock_active') === 'true';
+      if (isMock) {
+        setIsMocked(true);
+        setUser(res.user);
+        
+        // Load the mock profile from users collection
+        const docRef = doc(db, 'users', res.user.uid);
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+          setProfile(docSnap.data() as UserProfile);
+        } else {
+          setProfile({
+            uid: res.user.uid,
+            email: res.user.email,
+            displayName: res.user.displayName,
+            role: 'member',
+            branch: 'Ankaful',
+            createdAt: { toDate: function() { return new Date(); } },
+            onboarded: false
+          });
+        }
+        setLoading(false);
+      }
+      return res;
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
+  };
+
+  const logout = async () => {
+    setLoading(true);
+    try {
+      const isMock = localStorage.getItem('faithconnect_mock_active') === 'true';
+      if (isMock) {
+        mockLogout();
+      } else {
+        await apiSignOut(auth);
+        setUser(null);
+        setProfile(null);
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const isMock = localStorage.getItem('faithconnect_mock_active') === 'true';
     if (isMock) {
+      const mockUserStr = localStorage.getItem('faithconnect_mock_user');
+      if (mockUserStr) {
+        try {
+          const parsed = JSON.parse(mockUserStr);
+          setIsMocked(true);
+          setUser(parsed);
+          
+          const docRef = doc(db, 'users', parsed.uid);
+          getDoc(docRef).then((snap) => {
+            if (snap.exists()) {
+              setProfile(snap.data() as UserProfile);
+            } else {
+              setProfile({
+                uid: parsed.uid,
+                email: parsed.email,
+                displayName: parsed.displayName,
+                role: 'member',
+                branch: 'Ankaful',
+                createdAt: { toDate: function() { return new Date(); } },
+                onboarded: false
+              });
+            }
+            setLoading(false);
+          }).catch(() => {
+            setLoading(false);
+          });
+          return;
+        } catch (e) {
+          // ignore
+        }
+      }
+      
       const role = localStorage.getItem('faithconnect_mock_role') || 'member';
       mockLogin(role as any);
     }
@@ -156,7 +324,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = profile?.role === 'admin';
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isAdmin, mockLogin, mockLogout }}>
+    <AuthContext.Provider value={{ user, profile, loading, isAdmin, mockLogin, mockLogout, signUpWithCredentials, signInWithCredentials, logout }}>
       {children}
     </AuthContext.Provider>
   );

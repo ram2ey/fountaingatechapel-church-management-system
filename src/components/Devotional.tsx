@@ -167,7 +167,7 @@ export default function Devotional() {
               key={devo.title}
               date={devo.date} 
               title={devo.title} 
-              onClick={() => handleSelectDevotional(devo)}
+              onClick={() => setActiveDevo(devo)}
               isActive={activeDevo.title === devo.title}
             />
           ))}

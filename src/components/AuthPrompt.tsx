@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../lib/AuthContext';
 import { 
   Users, 
@@ -12,12 +12,51 @@ import {
   ClipboardList,
   Compass,
   Trophy,
-  LogIn
+  LogIn,
+  Key,
+  Mail,
+  UserPlus,
+  AlertCircle,
+  CheckCircle,
+  Eye,
+  EyeOff,
+  Settings,
+  ChevronDown,
+  Phone,
+  Briefcase,
+  MapPin,
+  Calendar
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
+import { BRANCHES } from '../types';
 
 export default function AuthPrompt({ view }: { view: string }) {
-  const { mockLogin } = useAuth();
+  const { mockLogin, signInWithCredentials, signUpWithCredentials } = useAuth();
+  
+  const [activeTab, setActiveTab] = useState<'login' | 'signup'>('login');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showDevRoles, setShowDevRoles] = useState(false);
+
+  // Sign In Fields
+  const [usernameOrEmail, setUsernameOrEmail] = useState('');
+  const [password, setPassword] = useState('');
+
+  // Sign Up Fields
+  const [signUpFullName, setSignUpFullName] = useState('');
+  const [signUpUsername, setSignUpUsername] = useState('');
+  const [signUpEmail, setSignUpEmail] = useState('');
+  const [signUpPhone, setSignUpPhone] = useState('');
+  const [signUpOccupation, setSignUpOccupation] = useState('');
+  const [signUpAddress, setSignUpAddress] = useState('');
+  const [signUpDob, setSignUpDob] = useState('');
+  const [signUpBranch, setSignUpBranch] = useState<string>('Ankaful');
+  const [signUpPassword, setSignUpPassword] = useState('');
+  const [signUpConfirmPassword, setSignUpConfirmPassword] = useState('');
+
+  // Status
+  const [formLoading, setFormLoading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const settings: Record<string, { icon: any; title: string; subtitle: string; scripture: string; citation: string }> = {
     directory: {
@@ -102,77 +141,499 @@ export default function AuthPrompt({ view }: { view: string }) {
 
   const IconComponent = current.icon;
 
-  const login = async () => {
-    const { signInWithPopup, GoogleAuthProvider, auth } = require('../lib/supabase');
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!usernameOrEmail.trim() || !password.trim()) {
+      setErrorMsg('Please enter both username/email and password.');
+      return;
+    }
+
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setFormLoading(true);
+
     try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      await signInWithCredentials(usernameOrEmail, password);
     } catch (err: any) {
-      console.error('Sign in error:', err);
+      setErrorMsg(err.message || 'Invalid credentials or connection issue.');
+      setFormLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (
+      !signUpFullName.trim() ||
+      !signUpUsername.trim() ||
+      !signUpEmail.trim() ||
+      !signUpPhone.trim() ||
+      !signUpOccupation.trim() ||
+      !signUpAddress.trim() ||
+      !signUpDob.trim() ||
+      !signUpPassword.trim() ||
+      !signUpConfirmPassword.trim()
+    ) {
+      setErrorMsg('All fields are required.');
+      return;
+    }
+
+    const usernameRegex = /^[a-zA-Z0-9_]{3,15}$/;
+    if (!usernameRegex.test(signUpUsername)) {
+      setErrorMsg('Username must be 3-15 alphanumeric characters or underscores.');
+      return;
+    }
+
+    if (signUpPassword !== signUpConfirmPassword) {
+      setErrorMsg('Passwords do not match.');
+      return;
+    }
+
+    if (signUpPassword.length < 6) {
+      setErrorMsg('Password should be at least 6 characters long.');
+      return;
+    }
+
+    setErrorMsg(null);
+    setSuccessMsg(null);
+    setFormLoading(true);
+
+    try {
+      await signUpWithCredentials(
+        signUpUsername,
+        signUpEmail,
+        signUpPassword,
+        signUpFullName,
+        signUpBranch,
+        signUpOccupation,
+        signUpPhone,
+        signUpAddress,
+        signUpDob
+      );
+      setSuccessMsg('Account created successfully! Welcome.');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to register account.');
+      setFormLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center py-12 px-4 max-w-lg mx-auto text-center h-full">
+    <div className="flex flex-col items-center justify-center py-6 px-4 max-w-2xl mx-auto text-center w-full min-h-full">
       <motion.div
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
-        className="bg-white p-8 md:p-12 rounded-[2.5rem] border border-church-gold/20 shadow-xl overflow-hidden relative group"
+        transition={{ duration: 0.4 }}
+        className="bg-white p-6 md:p-8 rounded-[2.5rem] border border-church-gold/20 shadow-2xl overflow-hidden relative group w-full"
       >
         <div className="absolute top-0 right-0 w-32 h-32 bg-church-gold/5 rounded-full -translate-y-1/2 translate-x-1/2"></div>
         
-        <div className="mx-auto w-16 h-16 bg-church-burgundy/10 text-church-burgundy rounded-2xl flex items-center justify-center mb-6 shadow-inner">
-          <IconComponent size={32} />
+        <div className="mx-auto w-12 h-12 bg-church-burgundy/10 text-church-burgundy rounded-2xl flex items-center justify-center mb-4 shadow-inner">
+          <IconComponent size={24} />
         </div>
 
-        <h3 className="text-3xl font-serif font-bold text-church-burgundy mb-3">{current.title}</h3>
-        <p className="text-slate-500 mb-8 text-sm leading-relaxed">{current.subtitle}</p>
+        <h3 className="text-xl md:text-2xl font-serif font-bold text-church-burgundy mb-1">{current.title}</h3>
+        <p className="text-slate-500 mb-5 text-[11px] leading-relaxed max-w-xs mx-auto">{current.subtitle}</p>
 
-        <div className="bg-church-cream/40 border-l-4 border-church-gold p-4 mb-8 text-left rounded-r-2xl">
-          <p className="text-slate-600 text-sm font-serif italic">"{current.scripture}"</p>
-          <p className="text-church-gold text-xs font-bold mt-2 uppercase tracking-wide">— {current.citation}</p>
+        {/* Tab Switcher */}
+        <div className="flex bg-slate-100 p-1 rounded-xl mb-5 border border-slate-200 max-w-xs mx-auto">
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('login');
+              setErrorMsg(null);
+            }}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+              activeTab === 'login'
+                ? 'bg-white text-church-burgundy shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Log In
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setActiveTab('signup');
+              setErrorMsg(null);
+            }}
+            className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+              activeTab === 'signup'
+                ? 'bg-white text-church-burgundy shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            Sign Up
+          </button>
         </div>
 
-        <button
-          onClick={login}
-          className="w-full flex items-center justify-center space-x-3 bg-church-burgundy hover:bg-church-burgundy/90 text-white py-4 px-6 rounded-2xl font-bold transition-all shadow-lg hover:shadow-xl hover:translate-y-[-2px] active:translate-y-0 cursor-pointer"
-        >
-          <LogIn size={20} />
-          <span>Connect with Google</span>
-        </button>
+        {/* Alerts */}
+        <AnimatePresence mode="wait">
+          {errorMsg && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="bg-red-50 border border-red-200 text-red-700 p-3 mb-5 rounded-xl text-left text-xs flex items-start space-x-2"
+            >
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{errorMsg}</span>
+            </motion.div>
+          )}
 
-        <div className="my-6 flex items-center justify-center space-x-2">
+          {successMsg && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="bg-emerald-50 border border-emerald-200 text-emerald-700 p-3 mb-5 rounded-xl text-left text-xs flex items-start space-x-2"
+            >
+              <CheckCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{successMsg}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Login Form */}
+        {activeTab === 'login' && (
+          <form onSubmit={handleLogin} className="space-y-4 text-left max-w-sm mx-auto">
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 pl-1">
+                Username or Email
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                  <UserIcon className="w-3.5 h-3.5" />
+                </span>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. pastor_michael"
+                  value={usernameOrEmail}
+                  onChange={(e) => setUsernameOrEmail(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-church-gold/80 transition-colors"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 pl-1">
+                Password
+              </label>
+              <div className="relative">
+                <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                  <Key className="w-3.5 h-3.5" />
+                </span>
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-9 pr-9 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-church-gold/80 transition-colors"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600 focus:outline-none"
+                >
+                  {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              disabled={formLoading}
+              className="w-full mt-5 flex items-center justify-center space-x-2 bg-church-burgundy hover:bg-church-burgundy/90 disabled:opacity-50 text-white py-3 px-6 rounded-xl font-bold transition-all shadow-md hover:shadow-lg cursor-pointer text-xs"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>{formLoading ? 'Logging in...' : 'Sign In'}</span>
+            </button>
+          </form>
+        )}
+
+        {/* Signup Form */}
+        {activeTab === 'signup' && (
+          <form onSubmit={handleSignUp} className="space-y-3.5 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+              
+              {/* Full Name (FIRST FIELD - Full Width) */}
+              <div className="md:col-span-2">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 pl-1">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                    <UserIcon className="w-3.5 h-3.5" />
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. John Doe"
+                    value={signUpFullName}
+                    onChange={(e) => setSignUpFullName(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-church-gold/80 transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Username */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 pl-1">
+                  Username
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                    <UserIcon className="w-3.5 h-3.5" />
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Alphanumeric, e.g. john_doe"
+                    value={signUpUsername}
+                    onChange={(e) => setSignUpUsername(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-church-gold/80 transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Email Address */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 pl-1">
+                  Email Address
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                    <Mail className="w-3.5 h-3.5" />
+                  </span>
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. john@example.com"
+                    value={signUpEmail}
+                    onChange={(e) => setSignUpEmail(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-church-gold/80 transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Phone Number */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 pl-1">
+                  Phone Number
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                    <Phone className="w-3.5 h-3.5" />
+                  </span>
+                  <input
+                    type="tel"
+                    required
+                    placeholder="e.g. +233 24 123 4567"
+                    value={signUpPhone}
+                    onChange={(e) => setSignUpPhone(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-church-gold/80 transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Occupation */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 pl-1">
+                  Occupation / Profession
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                    <Briefcase className="w-3.5 h-3.5" />
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Teacher, Nurse, Engineer"
+                    value={signUpOccupation}
+                    onChange={(e) => setSignUpOccupation(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-church-gold/80 transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* House Address */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 pl-1">
+                  House Address
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                    <MapPin className="w-3.5 h-3.5" />
+                  </span>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Hse No 4, Ankaful Rd"
+                    value={signUpAddress}
+                    onChange={(e) => setSignUpAddress(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-church-gold/80 transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Date of Birth (DOB) */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 pl-1">
+                  Date of Birth
+                </label>
+                <div className="relative">
+                  <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                    <Calendar className="w-3.5 h-3.5" />
+                  </span>
+                  <input
+                    type="date"
+                    required
+                    value={signUpDob}
+                    onChange={(e) => setSignUpDob(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-church-gold/80 transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Branch / Parish */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 pl-1">
+                  Branch / Parish
+                </label>
+                <div className="relative">
+                  <select
+                    value={signUpBranch}
+                    onChange={(e) => setSignUpBranch(e.target.value)}
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-church-gold/80 transition-colors appearance-none cursor-pointer"
+                  >
+                    {BRANCHES.map((b) => (
+                      <option key={b} value={b}>
+                        {b} Branch
+                      </option>
+                    ))}
+                  </select>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Password */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 pl-1">
+                  Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Min 6 chars"
+                  value={signUpPassword}
+                  onChange={(e) => setSignUpPassword(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-church-gold/80 transition-colors"
+                />
+              </div>
+
+              {/* Confirm Password */}
+              <div className="md:col-span-2">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1 pl-1">
+                  Confirm Password
+                </label>
+                <input
+                  type="password"
+                  required
+                  placeholder="Min 6 chars"
+                  value={signUpConfirmPassword}
+                  onChange={(e) => setSignUpConfirmPassword(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:border-church-gold/80 transition-colors"
+                />
+              </div>
+
+            </div>
+
+            <button
+              type="submit"
+              disabled={formLoading}
+              className="w-full mt-4 flex items-center justify-center space-x-2 bg-church-burgundy hover:bg-church-burgundy/90 disabled:opacity-50 text-white py-3 px-6 rounded-xl font-bold transition-all shadow-md hover:shadow-lg cursor-pointer text-xs"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>{formLoading ? 'Creating Account...' : 'Create Account'}</span>
+            </button>
+          </form>
+        )}
+
+        {/* Divider */}
+        <div className="my-5 flex items-center justify-center space-x-2">
           <div className="h-px bg-slate-100 flex-1"></div>
-          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Or Local Demo</span>
+          <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Dev Panel</span>
           <div className="h-px bg-slate-100 flex-1"></div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2">
+        {/* Expandable Mock Login Panel */}
+        <div className="border border-slate-200 rounded-2xl overflow-hidden bg-slate-50/50">
           <button
-            onClick={() => mockLogin('member')}
-            className="py-2.5 px-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors border border-slate-100 hover:border-slate-200 cursor-pointer"
+            type="button"
+            onClick={() => setShowDevRoles(!showDevRoles)}
+            className="w-full flex items-center justify-between p-3 hover:bg-slate-100/50 transition-colors text-slate-600 font-bold text-xs"
           >
-            Member
+            <div className="flex items-center space-x-2 text-slate-500">
+              <Settings className="w-3 h-3 animate-spin-slow" />
+              <span>Quick Role Logins (Mock Mode)</span>
+            </div>
+            <ChevronDown
+              className={`w-3 h-3 text-slate-400 transition-transform duration-300 ${
+                showDevRoles ? 'rotate-180' : ''
+              }`}
+            />
           </button>
-          <button
-            onClick={() => mockLogin('leader')}
-            className="py-2.5 px-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors border border-slate-100 hover:border-slate-200 cursor-pointer"
-          >
-            Leader
-          </button>
-          <button
-            onClick={() => mockLogin('admin')}
-            className="py-2.5 px-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-xl text-xs font-bold transition-colors border border-slate-100 hover:border-slate-200 cursor-pointer"
-          >
-            Admin
-          </button>
-          <button
-            onClick={() => mockLogin('new_user')}
-            className="py-2.5 px-2 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-xl text-xs font-bold transition-colors border border-amber-100 hover:border-amber-200 cursor-pointer"
-          >
-            New User (Onboard)
-          </button>
+
+          <AnimatePresence>
+            {showDevRoles && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="p-3 bg-white border-t border-slate-100 grid grid-cols-2 gap-2 text-[10px]">
+                  <button
+                    type="button"
+                    onClick={() => mockLogin('member')}
+                    className="py-1.5 px-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg font-semibold border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
+                  >
+                    John Member
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => mockLogin('leader')}
+                    className="py-1.5 px-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg font-semibold border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
+                  >
+                    Sarah Leader
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => mockLogin('admin')}
+                    className="py-1.5 px-2 bg-slate-50 hover:bg-slate-100 text-slate-700 rounded-lg font-semibold border border-slate-200 hover:border-slate-300 transition-colors cursor-pointer"
+                  >
+                    Pastor Michael (Admin)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => mockLogin('new_user')}
+                    className="py-1.5 px-2 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg font-semibold border border-amber-200 hover:border-amber-300 transition-colors cursor-pointer"
+                  >
+                    New User (Onboarding)
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Scripture quote banner */}
+        <div className="bg-church-cream/40 border-l-4 border-church-gold p-3 mt-5 text-left rounded-r-2xl">
+          <p className="text-slate-600 text-xs font-serif italic">"{current.scripture}"</p>
+          <p className="text-church-gold text-[9px] font-bold mt-1 uppercase tracking-wider">— {current.citation}</p>
         </div>
       </motion.div>
     </div>
